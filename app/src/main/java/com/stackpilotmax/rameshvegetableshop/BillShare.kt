@@ -40,7 +40,7 @@ object BillShare {
         // Customer debt is shown separately and can never overwrite the bill amount.
         val billTotal = LedgerRules.money(statement.saved.bill.total)
         val bitmap = renderBill(statement.copy(currentBill = billTotal), vendorName, upiId)
-        val output = File(directory, "sabzibill-${statement.saved.bill.id}.png")
+        val output = File(directory, "kirana-bill-${statement.saved.bill.id}.png")
         FileOutputStream(output).use { stream ->
             check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)) {
                 "Bill image save nahi hui"
@@ -56,7 +56,7 @@ object BillShare {
         val whatsappIntent = Intent(Intent.ACTION_SEND).apply {
             type = "image/png"
             putExtra(Intent.EXTRA_STREAM, uri)
-            clipData = ClipData.newRawUri("SabziBill", uri)
+            clipData = ClipData.newRawUri("Shiv Shakti Kirana", uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             setPackage("com.whatsapp")
         }
@@ -66,7 +66,7 @@ object BillShare {
                 val chooserIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "image/png"
                     putExtra(Intent.EXTRA_STREAM, uri)
-                    clipData = ClipData.newRawUri("SabziBill", uri)
+                    clipData = ClipData.newRawUri("Shiv Shakti Kirana", uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
                 context.startActivity(Intent.createChooser(chooserIntent, "Bill share karein"))
@@ -129,13 +129,13 @@ object BillShare {
         paint.color = Color.WHITE
         paint.typeface = extraBold
         paint.textSize = 72f
-        canvas.drawText("SabziBill", MARGIN, 128f, paint)
+        canvas.drawText("Shiv Shakti Kirana", MARGIN, 128f, paint)
         paint.textSize = 46f
         canvas.drawText(vendorName, MARGIN, 190f, paint)
         paint.typeface = Typeface.DEFAULT
         paint.textSize = 33f
         paint.color = Color.argb(220, 255, 255, 255)
-        canvas.drawText("Taazi sabzi • Saaf hisaab", MARGIN, 244f, paint)
+        canvas.drawText("General Store • Saaf hisaab", MARGIN, 244f, paint)
 
         paint.color = Color.WHITE
         canvas.drawCircle(WIDTH - 148f, 142f, 72f, paint)
@@ -151,7 +151,7 @@ object BillShare {
         paint.color = Color.rgb(82, 25, 69)
         paint.typeface = bold
         paint.textSize = 45f
-        canvas.drawText("Sabzi ka bill", MARGIN, y, paint)
+        canvas.drawText("Kirana Bill", MARGIN, y, paint)
         y += 38f
 
         paint.color = Color.rgb(255, 231, 184)
@@ -159,7 +159,7 @@ object BillShare {
         paint.color = Color.rgb(119, 35, 145)
         paint.textSize = 30f
         paint.typeface = bold
-        canvas.drawText("SABZI", MARGIN + 24f, y + 46f, paint)
+        canvas.drawText("ITEM", MARGIN + 24f, y + 46f, paint)
         canvas.drawText("QTY", 530f, y + 46f, paint)
         canvas.drawText("RATE", 700f, y + 46f, paint)
         paint.textAlign = Paint.Align.RIGHT
@@ -222,11 +222,11 @@ object BillShare {
         paint.color = Color.rgb(143, 49, 77)
         paint.typeface = bold
         paint.textSize = 41f
-        canvas.drawText("Shubh Deepawali • Dhanyavaad!", WIDTH / 2f, y + 62f, paint)
+        canvas.drawText("Dhanyavaad • Shiv Shakti Kirana Store!", WIDTH / 2f, y + 62f, paint)
         paint.typeface = Typeface.DEFAULT
         paint.textSize = 31f
         paint.color = Color.rgb(70, 103, 84)
-        canvas.drawText("Taazi sabzi ke liye phir zaroor aaiye 😊", WIDTH / 2f, y + 112f, paint)
+        canvas.drawText("Shiv Shakti Kirana Store par phir zaroor aaiye 😊", WIDTH / 2f, y + 112f, paint)
         paint.textAlign = Paint.Align.LEFT
 
         if (statement.isVoided) {
@@ -303,7 +303,7 @@ object BillShare {
         var rowY = top + 112f
         drawMoneyRow(canvas, paint, "Pehle ka baki", statement.previousDebt, rowY)
         rowY += 58f
-        drawMoneyRow(canvas, paint, "Aaj ka vegetable bill", persistedBillTotal, rowY)
+        drawMoneyRow(canvas, paint, "Aaj ka grocery bill", persistedBillTotal, rowY)
         rowY += 58f
         drawMoneyRow(canvas, paint, "Aaj paid", statement.amountPaid, rowY, Color.rgb(44, 151, 96))
         rowY += 58f
