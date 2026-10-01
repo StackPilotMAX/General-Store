@@ -1,19 +1,7 @@
 package com.stackpilotmax.rameshvegetableshop
 
-import android.app.Activity
-import android.content.Intent
-import android.speech.RecognizerIntent
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,18 +14,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -58,21 +47,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.stackpilotmax.rameshvegetableshop.data.BillDraftItem
-import java.util.Locale
 
 @Composable
 internal fun NewBillWorldScreen(viewModel: SabziViewModel) {
-    val context = LocalContext.current
     val customers by viewModel.customers.collectAsState()
     val matchingCustomers by viewModel.matchingCustomers.collectAsState()
     val selectedCustomer by viewModel.selectedCustomer.collectAsState()
@@ -85,160 +70,122 @@ internal fun NewBillWorldScreen(viewModel: SabziViewModel) {
     val projectedBalance by viewModel.projectedCustomerBalance.collectAsState()
     val billTotal by viewModel.billTotal.collectAsState()
 
-    var selectedUnit by remember { mutableStateOf("All") }
-    var chosenVegetable by remember { mutableStateOf<VegetableOption?>(null) }
+    var showItemDialog by remember { mutableStateOf(false) }
+    var editingItem by remember { mutableStateOf<BillDraftItem?>(null) }
+    var itemName by remember { mutableStateOf("") }
+    var unit by remember { mutableStateOf("Pcs") }
     var quantity by remember { mutableStateOf("") }
-    var rate by remember { mutableStateOf("") }
+    var price by remember { mutableStateOf("") }
     var directMode by remember { mutableStateOf(false) }
     var directTotal by remember { mutableStateOf("") }
-    var showTemporaryVegetableDialog by remember { mutableStateOf(false) }
-    var temporaryVegetableName by remember { mutableStateOf("") }
-    var temporaryVegetableUnit by remember { mutableStateOf("Kg") }
 
-    fun openEditor(vegetable: VegetableOption, existing: BillDraftItem? = null) {
-        chosenVegetable = vegetable
-        quantity = existing?.quantity?.let(::moneyText).orEmpty()
-        rate = existing?.rate?.let(::moneyText).orEmpty()
-        directMode = existing?.directAmount != null
-        directTotal = existing?.directAmount?.let(::moneyText).orEmpty()
+    fun openItemEditor(item: BillDraftItem? = null) {
+        editingItem = item
+        itemName = item?.vegetableName.orEmpty()
+        unit = item?.unit?.ifBlank { "Pcs" } ?: "Pcs"
+        quantity = item?.quantity?.let(::moneyText).orEmpty()
+        price = item?.rate?.let(::moneyText).orEmpty()
+        directMode = item?.directAmount != null
+        directTotal = item?.directAmount?.let(::moneyText).orEmpty()
+        showItemDialog = true
     }
 
-    fun vegetableFor(item: BillDraftItem): VegetableOption =
-        viewModel.vegetables.firstOrNull { it.name == item.vegetableName }
-            ?: VegetableOption(
-                name = item.vegetableName,
-                unit = item.unit,
-                emoji = "🧺"
-            )
+    if (showItemDialog) {
+        val calculated = if (directMode) {
+            directTotal.toDoubleOrNull()
+        } else {
+            val q = quantity.toDoubleOrNull()
+            val p = price.toDoubleOrNull()
+            if (q != null && p != null) q * p else null
+        }
 
-    if (showTemporaryVegetableDialog) {
         AlertDialog(
-            onDismissRequest = { showTemporaryVegetableDialog = false },
+            onDismissRequest = { showItemDialog = false },
             title = {
-                Column {
-                    Text("🧺 Temporary vegetable", fontWeight = FontWeight.Black, color = DeepBlue)
-                    Text("Sirf is bill ke liye", fontSize = 12.sp, color = MutedText)
-                }
-            },
-            text = {
                 Column {
                     Text(
-                        "Jo sabzi regular list mein nahi hai uska naam likhiye. Yeh master vegetable list mein save nahi hogi.",
-                        fontSize = 12.sp,
+                        if (editingItem == null) "🛒 Add store item" else "✏️ Edit store item",
+                        fontWeight = FontWeight.Black,
+                        color = DeepBlue
+                    )
+                    Text(
+                        "Sirf is bill ke liye • item master list mein save nahi hoga",
+                        fontSize = 11.sp,
                         color = MutedText
                     )
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = temporaryVegetableName,
-                        onValueChange = { temporaryVegetableName = it },
-                        label = { Text("Vegetable name") },
-                        supportingText = { Text("Example: Potato") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Text("Unit select karein", fontWeight = FontWeight.Black, color = DeepBlue)
-                    Spacer(Modifier.height(7.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("Kg", "Bunch").forEach { unit ->
-                            FilterChip(
-                                selected = temporaryVegetableUnit == unit,
-                                onClick = { temporaryVegetableUnit = unit },
-                                label = { Text(unit) }
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    enabled = temporaryVegetableName.trim().isNotEmpty(),
-                    onClick = {
-                        val typedName = temporaryVegetableName.trim()
-                        val existing = cart.firstOrNull {
-                            it.vegetableName.equals(typedName, ignoreCase = true)
-                        }
-                        val vegetable = viewModel.vegetables.firstOrNull {
-                            it.name.equals(typedName, ignoreCase = true)
-                        } ?: VegetableOption(
-                            name = existing?.vegetableName ?: typedName,
-                            unit = temporaryVegetableUnit,
-                            emoji = "🧺"
-                        )
-                        selectedUnit = vegetable.unit
-                        showTemporaryVegetableDialog = false
-                        temporaryVegetableName = ""
-                        openEditor(vegetable, existing)
-                    }
-                ) { Text("Next") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTemporaryVegetableDialog = false }) { Text("Cancel") }
-            }
-        )
-    }
-
-    chosenVegetable?.let { vegetable ->
-        AlertDialog(
-            onDismissRequest = { chosenVegetable = null },
-            title = {
-                Column {
-                    Text("${vegetable.emoji} ${vegetable.name}", fontWeight = FontWeight.Black, color = DeepBlue)
-                    Text("Unit: ${vegetable.unit}", fontSize = 12.sp, color = MutedText)
                 }
             },
             text = {
                 Column {
                     OutlinedTextField(
-                        value = quantity,
-                        onValueChange = { quantity = decimalInput(it) },
-                        label = { Text("Quantity (${vegetable.unit})") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        value = itemName,
+                        onValueChange = { itemName = it },
+                        label = { Text("Item name") },
+                        placeholder = { Text("e.g. Aashirvaad Atta 5kg") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(Modifier.height(9.dp))
-                    OutlinedTextField(
-                        value = rate,
-                        onValueChange = { rate = decimalInput(it) },
-                        label = { Text("Rate per ${vegetable.unit}") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(12.dp))
+                    Text("Unit", fontWeight = FontWeight.Bold, color = DeepBlue, fontSize = 12.sp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp)
+                    ) {
+                        listOf("Pcs", "Kg", "g", "L", "ml", "Packet", "Box", "Bottle", "Dozen", "Set").forEach { choice ->
+                            FilterChip(
+                                selected = unit == choice,
+                                onClick = { unit = choice },
+                                label = { Text(choice) }
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(9.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                        OutlinedTextField(
+                            value = quantity,
+                            onValueChange = { quantity = decimalInput(it) },
+                            label = { Text("Quantity") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = price,
+                            onValueChange = { price = decimalInput(it) },
+                            label = { Text("Price / unit ₹") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(Modifier.height(10.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(Modifier.weight(1f)) {
                             Text("Direct total", fontWeight = FontWeight.Black, color = DeepBlue)
-                            Text("Quantity × rate ko override karega", fontSize = 11.sp, color = MutedText)
+                            Text("Quantity × price ko override kare", fontSize = 11.sp, color = MutedText)
                         }
                         Switch(checked = directMode, onCheckedChange = { directMode = it })
                     }
-                    AnimatedVisibility(visible = directMode, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut()) {
+                    if (directMode) {
+                        Spacer(Modifier.height(7.dp))
                         OutlinedTextField(
                             value = directTotal,
                             onValueChange = { directTotal = decimalInput(it) },
-                            label = { Text("Direct item total") },
+                            label = { Text("Direct item total ₹") },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                             singleLine = true,
-                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                            modifier = Modifier.fillMaxWidth()
                         )
-                    }
-                    val calculated = if (directMode) {
-                        directTotal.toDoubleOrNull()
-                    } else {
-                        val q = quantity.toDoubleOrNull()
-                        val r = rate.toDoubleOrNull()
-                        if (q != null && r != null) q * r else null
                     }
                     calculated?.let {
                         Text(
                             "Item total: ₹${moneyText(it)}",
-                            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                             textAlign = TextAlign.End,
                             fontWeight = FontWeight.Black,
                             color = LeafGreen
@@ -247,18 +194,26 @@ internal fun NewBillWorldScreen(viewModel: SabziViewModel) {
                 }
             },
             confirmButton = {
-                Button(onClick = {
-                    viewModel.addOrUpdateItem(
-                        vegetable = vegetable,
-                        quantity = quantity.toDoubleOrNull() ?: 0.0,
-                        rate = rate.toDoubleOrNull() ?: 0.0,
-                        directAmount = if (directMode) directTotal.toDoubleOrNull() else null
-                    )
-                    chosenVegetable = null
-                }) { Text("Add / Update") }
+                Button(
+                    enabled = itemName.trim().isNotBlank() &&
+                        unit.isNotBlank() &&
+                        quantity.toDoubleOrNull()?.let { it > 0 } == true &&
+                        (if (directMode) directTotal.toDoubleOrNull()?.let { it >= 0 } == true
+                        else price.toDoubleOrNull()?.let { it >= 0 } == true),
+                    onClick = {
+                        viewModel.addOrUpdateItem(
+                            itemName = itemName,
+                            unit = unit,
+                            quantity = quantity.toDoubleOrNull() ?: 0.0,
+                            rate = price.toDoubleOrNull() ?: 0.0,
+                            directAmount = if (directMode) directTotal.toDoubleOrNull() else null
+                        )
+                        showItemDialog = false
+                    }
+                ) { Text(if (editingItem == null) "Add item" else "Update item") }
             },
             dismissButton = {
-                TextButton(onClick = { chosenVegetable = null }) { Text("Cancel") }
+                TextButton(onClick = { showItemDialog = false }) { Text("Cancel") }
             }
         )
     }
@@ -271,7 +226,7 @@ internal fun NewBillWorldScreen(viewModel: SabziViewModel) {
             WorldTopBar(
                 title = if (editingBillId == null) "Billing Counter" else "Bill Edit Counter",
                 subtitle = if (editingBillId == null) {
-                    "Customer → sabzi → payment → save"
+                    "Customer → items → payment → save"
                 } else {
                     "Same bill ID; old charge replace hoga"
                 },
@@ -279,9 +234,7 @@ internal fun NewBillWorldScreen(viewModel: SabziViewModel) {
             )
         }
 
-        item {
-            BillingJourneyHeader(editingBillId != null)
-        }
+        item { BillingJourneyHeader(editingBillId != null) }
 
         item {
             Card(
@@ -297,7 +250,7 @@ internal fun NewBillWorldScreen(viewModel: SabziViewModel) {
                         value = customerName,
                         onValueChange = viewModel::setCustomerName,
                         label = { Text("Customer name") },
-                        supportingText = { Text("Raju aur Rajesh ka khata kabhi mix nahi hoga") },
+                        supportingText = { Text("Har customer ka khata alag ID par rahega") },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
@@ -310,7 +263,6 @@ internal fun NewBillWorldScreen(viewModel: SabziViewModel) {
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
-
                     Spacer(Modifier.height(12.dp))
                     CustomerIdentityCard(
                         customerName = customerName,
@@ -319,10 +271,14 @@ internal fun NewBillWorldScreen(viewModel: SabziViewModel) {
                         currentBalance = currentBalance,
                         matchingCount = matchingCustomers.size
                     )
-
                     if (customers.isNotEmpty()) {
                         Spacer(Modifier.height(14.dp))
-                        Text("Saved customer select karein", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MutedText)
+                        Text(
+                            "Saved customer select karein",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MutedText
+                        )
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             contentPadding = PaddingValues(top = 8.dp)
@@ -334,7 +290,10 @@ internal fun NewBillWorldScreen(viewModel: SabziViewModel) {
                             ) { customer ->
                                 OutlinedButton(onClick = { viewModel.selectCustomer(customer) }) {
                                     Text(
-                                        customer.name + customer.phone.takeIf { it.isNotBlank() }?.let { " • ${it.takeLast(4)}" }.orEmpty()
+                                        customer.name +
+                                            customer.phone.takeIf { it.isNotBlank() }
+                                                ?.let { " • ${it.takeLast(4)}" }
+                                                .orEmpty()
                                     )
                                 }
                             }
@@ -345,94 +304,51 @@ internal fun NewBillWorldScreen(viewModel: SabziViewModel) {
         }
 
         item {
-            Row(
+            Card(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                shape = RoundedCornerShape(26.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                SectionHeading("Step 2", "Sabzi chuniye")
-                VoiceVegetableButton(
-                    vegetables = viewModel.vegetables,
-                    onMatched = { vegetable ->
-                        selectedUnit = vegetable.unit
-                        openEditor(
-                            vegetable,
-                            cart.firstOrNull { it.vegetableName == vegetable.name }
+                Column(Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        SectionHeading("Step 2", "Items add karein")
+                        Icon(
+                            Icons.Default.ShoppingCart,
+                            contentDescription = null,
+                            tint = Lavender,
+                            modifier = Modifier.size(28.dp)
                         )
                     }
-                )
-            }
-        }
-
-        item {
-            VegetableSearchPanel(
-                vegetables = viewModel.vegetables,
-                onSelected = { vegetable ->
-                    selectedUnit = vegetable.unit
-                    openEditor(
-                        vegetable,
-                        cart.firstOrNull { it.vegetableName == vegetable.name }
+                    Spacer(Modifier.height(9.dp))
+                    Text(
+                        "Koi catalogue maintain nahi karna. Har bill mein item name, unit, quantity aur price yahin enter karein.",
+                        fontSize = 12.sp,
+                        lineHeight = 18.sp,
+                        color = MutedText
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Button(
+                        onClick = { openItemEditor() },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(18.dp)
+                    ) {
+                        Icon(Icons.Default.ReceiptLong, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Add Item", fontWeight = FontWeight.Black, fontSize = 16.sp)
+                    }
+                    Text(
+                        "Temporary item • bill save hone par sirf line item record rahega",
+                        modifier = Modifier.fillMaxWidth().padding(top = 7.dp),
+                        textAlign = TextAlign.Center,
+                        fontSize = 11.sp,
+                        color = MutedText
                     )
                 }
-            )
-        }
-
-        item {
-            OutlinedButton(
-                onClick = {
-                    temporaryVegetableName = ""
-                    temporaryVegetableUnit = "Kg"
-                    showTemporaryVegetableDialog = true
-                },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(18.dp)
-            ) {
-                Text("➕ Temporary vegetable", fontWeight = FontWeight.Black)
-            }
-            Text(
-                "Sirf current bill ke liye • master list update nahi hogi",
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 2.dp),
-                textAlign = TextAlign.Center,
-                fontSize = 11.sp,
-                color = MutedText
-            )
-        }
-
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 5.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                listOf("All", "Bunch", "Kg").forEach { unit ->
-                    FilterChip(
-                        selected = selectedUnit == unit,
-                        onClick = { selectedUnit = unit },
-                        label = { Text(unit) }
-                    )
-                }
-            }
-        }
-
-        val filteredVegetables = viewModel.vegetables.filter {
-            selectedUnit == "All" || it.unit == selectedUnit
-        }
-        items(filteredVegetables.chunked(2)) { row ->
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                row.forEach { vegetable ->
-                    val existing = cart.firstOrNull { it.vegetableName == vegetable.name }
-                    VegetableWorldTile(
-                        vegetable = vegetable,
-                        existing = existing,
-                        modifier = Modifier.weight(1f)
-                    ) { openEditor(vegetable, existing) }
-                }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
             }
         }
 
@@ -446,15 +362,17 @@ internal fun NewBillWorldScreen(viewModel: SabziViewModel) {
 
         if (cart.isEmpty()) {
             item {
-                EmptyWorldState("🧺", "Basket abhi khaali hai", "Upar kisi sabzi par tap karke quantity aur rate add kijiye.")
+                EmptyWorldState(
+                    "🛒",
+                    "Basket abhi khaali hai",
+                    "Add Item dabakar kisi bhi kirana item ka naam, unit, quantity aur price enter kijiye."
+                )
             }
         } else {
             items(cart, key = { it.vegetableName }) { item ->
-                val vegetable = vegetableFor(item)
-                BillBasketRow(
+                GenericBillBasketRow(
                     item = item,
-                    vegetable = vegetable,
-                    onEdit = { openEditor(vegetable, item) },
+                    onEdit = { openItemEditor(item) },
                     onDelete = { viewModel.removeItem(item.vegetableName) }
                 )
             }
@@ -482,7 +400,7 @@ internal fun NewBillWorldScreen(viewModel: SabziViewModel) {
                     Spacer(Modifier.height(14.dp))
                     LiveBillSummary(
                         previousDebt = currentBalance,
-                        vegetableTotal = billTotal,
+                        itemTotal = billTotal,
                         paid = amountPaid.toDoubleOrNull() ?: 0.0,
                         projected = projectedBalance,
                         editing = editingBillId != null
@@ -544,7 +462,8 @@ private fun BillingJourneyHeader(editing: Boolean) {
                     color = DeepBlue
                 )
                 Text(
-                    if (editing) "Same bill ID aur safe debt replacement" else "4 simple steps • bade buttons • live total",
+                    if (editing) "Same bill ID aur safe debt replacement"
+                    else "4 simple steps • item line entries • live total",
                     fontSize = 12.sp,
                     color = MutedText
                 )
@@ -575,10 +494,25 @@ private fun CustomerIdentityCard(
     ) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier.size(46.dp).clip(CircleShape).background(Color.White),
+                modifier = Modifier
+                    .size(46.dp)
+                    .background(Color.White, RoundedCornerShape(50)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(when { ambiguous -> "!"; isSelected -> "✓"; else -> "+" }, fontSize = 22.sp, fontWeight = FontWeight.Black, color = if (ambiguous) WarmOrange else if (isSelected) LeafGreen else Lavender)
+                Text(
+                    when {
+                        ambiguous -> "!"
+                        isSelected -> "✓"
+                        else -> "+"
+                    },
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Black,
+                    color = when {
+                        ambiguous -> WarmOrange
+                        isSelected -> LeafGreen
+                        else -> Lavender
+                    }
+                )
             }
             Column(Modifier.weight(1f).padding(start = 12.dp)) {
                 Text(
@@ -604,7 +538,12 @@ private fun CustomerIdentityCard(
             Column(horizontalAlignment = Alignment.End) {
                 Text("Purana baki", fontSize = 10.sp, color = MutedText)
                 AnimatedContent(targetState = currentBalance, label = "customer_debt") { amount ->
-                    Text("₹${moneyText(amount)}", fontSize = 21.sp, fontWeight = FontWeight.Black, color = if (amount > 0) WarmOrange else LeafGreen)
+                    Text(
+                        "₹${moneyText(amount)}",
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.Black,
+                        color = if (amount > 0) WarmOrange else LeafGreen
+                    )
                 }
             }
         }
@@ -612,43 +551,8 @@ private fun CustomerIdentityCard(
 }
 
 @Composable
-private fun VegetableWorldTile(
-    vegetable: VegetableOption,
-    existing: BillDraftItem?,
-    modifier: Modifier,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = modifier.clickable(onClick = onClick),
-        shape = RoundedCornerShape(23.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (existing != null) Color(0xFFFFEFD0) else Color.White
-        ),
-        elevation = CardDefaults.cardElevation(if (existing != null) 7.dp else 3.dp)
-    ) {
-        Column(Modifier.fillMaxWidth().padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(
-                modifier = Modifier.size(60.dp).clip(CircleShape).background(
-                    Brush.linearGradient(listOf(Color(0xFFFFE0A8), Color(0xFFF0EAFF)))
-                ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(vegetable.emoji, fontSize = 31.sp)
-            }
-            Spacer(Modifier.height(7.dp))
-            Text(vegetable.name, fontSize = 14.sp, fontWeight = FontWeight.Black, color = DeepBlue, textAlign = TextAlign.Center)
-            Text(vegetable.unit, fontSize = 11.sp, color = Lavender, fontWeight = FontWeight.Bold)
-            existing?.let {
-                Text("₹${moneyText(it.amount)} added", fontSize = 11.sp, color = LeafGreen, fontWeight = FontWeight.Black)
-            }
-        }
-    }
-}
-
-@Composable
-private fun BillBasketRow(
+private fun GenericBillBasketRow(
     item: BillDraftItem,
-    vegetable: VegetableOption,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -658,8 +562,11 @@ private fun BillBasketRow(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(3.dp)
     ) {
-        Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(vegetable.emoji, fontSize = 31.sp)
+        Row(
+            Modifier.fillMaxWidth().padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("🛍️", fontSize = 29.sp)
             Column(Modifier.weight(1f).padding(start = 10.dp)) {
                 Text(item.vegetableName, fontWeight = FontWeight.Black, color = DeepBlue)
                 Text(
@@ -672,9 +579,18 @@ private fun BillBasketRow(
                     color = MutedText
                 )
             }
-            Text("₹${moneyText(item.amount)}", fontSize = 18.sp, fontWeight = FontWeight.Black, color = DeepBlue)
-            IconButton(onClick = onEdit) { Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Lavender) }
-            IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, contentDescription = "Delete", tint = ErrorRed) }
+            Text(
+                "₹${moneyText(item.amount)}",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Black,
+                color = DeepBlue
+            )
+            IconButton(onClick = onEdit) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Lavender)
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = ErrorRed)
+            }
         }
     }
 }
@@ -682,7 +598,7 @@ private fun BillBasketRow(
 @Composable
 private fun LiveBillSummary(
     previousDebt: Double,
-    vegetableTotal: Double,
+    itemTotal: Double,
     paid: Double,
     projected: Double,
     editing: Boolean
@@ -690,22 +606,30 @@ private fun LiveBillSummary(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
-            .background(Brush.verticalGradient(listOf(Color(0xFFFFF7E8), Color.White)))
+            .background(
+                Brush.verticalGradient(listOf(Color(0xFFFFF7E8), Color.White)),
+                RoundedCornerShape(22.dp)
+            )
             .padding(16.dp)
     ) {
         SummaryLine("Selected customer ka current baki", previousDebt, WarmOrange)
-        SummaryLine("Vegetable bill", vegetableTotal, DeepBlue)
+        SummaryLine("Aaj ka item bill", itemTotal, DeepBlue)
         SummaryLine("Paid in this bill", paid, LeafGreen)
         Spacer(Modifier.height(8.dp))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(17.dp))
-                .background(if (editing) Color(0xFFF0EAFF) else Color(0xFFFFE3AD))
+                .background(
+                    if (editing) Color(0xFFF0EAFF) else Color(0xFFFFE3AD),
+                    RoundedCornerShape(17.dp)
+                )
                 .padding(horizontal = 14.dp, vertical = 12.dp)
         ) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text("SAVE KE BAAD BAKI", fontSize = 12.sp, fontWeight = FontWeight.Black, color = Lavender)
                 AnimatedContent(targetState = projected, label = "projected_total") { value ->
                     Text("₹${moneyText(value)}", fontSize = 25.sp, fontWeight = FontWeight.Black, color = DeepBlue)
@@ -716,57 +640,12 @@ private fun LiveBillSummary(
 }
 
 @Composable
-private fun SummaryLine(label: String, value: Double, color: Color) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, fontSize = 13.sp, color = MutedText)
-        Text("₹${moneyText(value)}", fontSize = 15.sp, fontWeight = FontWeight.Black, color = color)
+private fun SummaryLine(label: String, amount: Double, color: Color) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, fontSize = 12.sp, color = MutedText)
+        Text("₹${moneyText(amount)}", fontWeight = FontWeight.Black, color = color)
     }
-}
-
-private fun matchSpokenVegetable(
-    spoken: String,
-    vegetables: List<VegetableOption>
-): VegetableOption? {
-    val normalized = spoken.lowercase(Locale.getDefault()).replace(Regex("[^a-z0-9अ-ह]"), "")
-    val aliases = linkedMapOf(
-        "methi" to "Methi",
-        "मेथी" to "Methi",
-        "palak" to "Palak",
-        "पालक" to "Palak",
-        "soya" to "Soya",
-        "सोया" to "Soya",
-        "harakanda" to "Hara Kanda",
-        "हराकांदा" to "Hara Kanda",
-        "chinakothmir" to "China Kothmir",
-        "dhaniya" to "China Kothmir",
-        "pudina" to "Pudina",
-        "chaulai" to "Chaulai",
-        "moolikepatte" to "Mooli ke Patte",
-        "desikothmir" to "Desi Kothmir",
-        "mooli" to "Mooli",
-        "harimirch" to "Hari Mirch",
-        "nayaadrak" to "Naya Adrak",
-        "puranaadrak" to "Purana Adrak",
-        "kadipatta" to "Kadi Patta",
-        "nimbu" to "Nimbu",
-        "gobhi" to "Gobhi",
-        "gobi" to "Gobhi",
-        "shimlamirch" to "Shimla Mirch",
-        "chotalahsun" to "Chota Lahsun",
-        "badalahsun" to "Bada Lahsun",
-        "kakdi" to "Kakdi",
-        "kheera" to "Kakdi"
-    )
-    val name = aliases.entries.firstOrNull { normalized.contains(it.key) }?.value
-    return vegetables.firstOrNull { it.name == name }
-        ?: vegetables.firstOrNull {
-            normalized.contains(it.name.lowercase(Locale.getDefault()).replace(" ", ""))
-        }
-}
-
-private fun decimalInput(value: String): String {
-    val filtered = value.filter { it.isDigit() || it == '.' }
-    val firstDot = filtered.indexOf('.')
-    return if (firstDot < 0) filtered
-    else filtered.substring(0, firstDot + 1) + filtered.substring(firstDot + 1).replace(".", "")
 }
