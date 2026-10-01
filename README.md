@@ -52,10 +52,10 @@ The release workflow:
 - Verifies the APK signature
 - Retries Gradle test/lint/build commands for transient dependency or cache failures
 - Uses a protected `ANDROID_SIGNING_KEYSTORE_B64` repository secret when configured
-- Falls back to the legacy update-signing key used by the copied app, then to a CI-only key only if neither is usable
+- Generates a CI-only fallback key when the protected secret is absent, so tests and build verification stay green without publishing a private key
 - Uploads the signed APK plus SHA-256 checksum
 
-For long-term production security, configure the protected `ANDROID_SIGNING_KEYSTORE_B64` secret and keep the signing key out of the repository.
+For an APK that updates over an already-installed APK without uninstalling, configure `ANDROID_SIGNING_KEYSTORE_B64` with the same signing keystore used for the installed app. Keep that keystore out of the repository. The CI fallback intentionally keeps the workflow green, but it is not a substitute for the production signing key.
 
 ## CI verification
 
