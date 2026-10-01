@@ -44,28 +44,7 @@ enum class AppScreen {
 class SabziViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = SabziRepository(application)
 
-    val vegetables = listOf(
-        VegetableOption("Methi", "Bunch", "🌿"),
-        VegetableOption("Palak", "Bunch", "🥬"),
-        VegetableOption("Soya", "Bunch", "🌱"),
-        VegetableOption("Hara Kanda", "Bunch", "🧅"),
-        VegetableOption("China Kothmir", "Bunch", "🌿"),
-        VegetableOption("Pudina", "Bunch", "🍃"),
-        VegetableOption("Chaulai", "Bunch", "🥬"),
-        VegetableOption("Mooli ke Patte", "Bunch", "🌿"),
-        VegetableOption("Desi Kothmir", "Bunch", "🌱"),
-        VegetableOption("Mooli", "Bunch", "🥕"),
-        VegetableOption("Hari Mirch", "Kg", "🌶️"),
-        VegetableOption("Naya Adrak", "Kg", "🫚"),
-        VegetableOption("Purana Adrak", "Kg", "🫚"),
-        VegetableOption("Kadi Patta", "Kg", "🍃"),
-        VegetableOption("Nimbu", "Kg", "🍋"),
-        VegetableOption("Gobhi", "Kg", "🥦"),
-        VegetableOption("Shimla Mirch", "Kg", "🫑"),
-        VegetableOption("Chota Lahsun", "Kg", "🧄"),
-        VegetableOption("Bada Lahsun", "Kg", "🧄"),
-        VegetableOption("Kakdi", "Kg", "🥒")
-    )
+    // General-store billing has no permanent item catalogue. Every item is entered per bill.
 
     val customers: StateFlow<List<CustomerEntity>> = repository.customers
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -285,34 +264,36 @@ class SabziViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun addOrUpdateItem(
-        vegetable: VegetableOption,
+        itemName: String,
+        unit: String,
         quantity: Double,
         rate: Double,
         directAmount: Double? = null
     ) {
         runCatching {
             val replacement = BillDraftItem(
-                vegetableName = vegetable.name,
-                unit = vegetable.unit,
+                vegetableName = itemName.trim(),
+                unit = unit.trim(),
                 quantity = quantity,
                 rate = rate,
                 directAmount = directAmount
             )
             replacement.amount
         }.onSuccess {
+            val cleanName = itemName.trim()
             val replacement = BillDraftItem(
-                vegetableName = vegetable.name,
-                unit = vegetable.unit,
+                vegetableName = cleanName,
+                unit = unit.trim(),
                 quantity = quantity,
                 rate = rate,
                 directAmount = directAmount
             )
             _cart.value = _cart.value
-                .filterNot { it.vegetableName == vegetable.name }
+                .filterNot { it.vegetableName.equals(cleanName, ignoreCase = true) }
                 .plus(replacement)
-            _message.value = "${vegetable.name} bill mein add ho gaya"
+            _message.value = cleanName + " bill mein add ho gaya"
         }.onFailure {
-            _message.value = it.message ?: "Quantity aur rate sahi daaliye"
+            _message.value = it.message ?: "Item quantity aur price sahi daaliye"
         }
     }
 
