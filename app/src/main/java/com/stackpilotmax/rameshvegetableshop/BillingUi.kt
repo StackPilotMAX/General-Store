@@ -649,3 +649,11 @@ private fun SummaryLine(label: String, amount: Double, color: Color) {
         Text("₹${moneyText(amount)}", fontWeight = FontWeight.Black, color = color)
     }
 }
+
+
+internal fun decimalInput(value: String): String =
+    value.filter { it.isDigit() || it == '.' }.let { filtered ->
+        val dot = filtered.indexOf('.')
+        if (dot >= 0) filtered.substring(0, dot + 1) + filtered.substring(dot + 1).replace(".", "")
+        else filtered
+    }
