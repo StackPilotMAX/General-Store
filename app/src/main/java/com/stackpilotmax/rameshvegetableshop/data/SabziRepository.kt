@@ -434,7 +434,9 @@ class SabziRepository(context: Context) {
         paymentDao.getForCustomer(customerId)
 
     fun vendorName(): String =
-        prefs.getString("vendor_name", "Ramesh Vegetable Shop") ?: "Ramesh Vegetable Shop"
+        prefs.getString("vendor_name", null)
+            ?.takeIf { it.isNotBlank() && !it.equals("Ramesh Vegetable Shop", ignoreCase = true) }
+            ?: "Shiv Shakti Kirana Store"
 
     fun upiId(): String = prefs.getString("upi_id", "") ?: ""
 
@@ -448,7 +450,7 @@ class SabziRepository(context: Context) {
 
     fun saveSettings(vendorName: String, upiId: String, motionEnabled: Boolean) {
         prefs.edit()
-            .putString("vendor_name", vendorName.trim().ifBlank { "Ramesh Vegetable Shop" })
+            .putString("vendor_name", vendorName.trim().ifBlank { "Shiv Shakti Kirana Store" })
             .putString("upi_id", upiId.trim())
             .putBoolean("motion_enabled", motionEnabled)
             .apply()
