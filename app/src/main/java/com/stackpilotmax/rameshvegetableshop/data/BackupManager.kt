@@ -25,7 +25,7 @@ class BackupManager(context: Context) {
             put(
                 "settings",
                 JSONObject().apply {
-                    put("vendor_name", preferences.getString("vendor_name", "Ramesh Vegetable Shop"))
+                    put("vendor_name", preferences.getString("vendor_name", "Shiv Shakti Kirana Store"))
                     put("upi_id", preferences.getString("upi_id", ""))
                     put("motion_enabled", preferences.getBoolean("motion_enabled", true))
                     put("active_bill_count_visible", preferences.getBoolean("active_bill_count_visible", true))
@@ -85,7 +85,7 @@ class BackupManager(context: Context) {
 
         data.optJSONObject("settings")?.let { settings ->
             preferences.edit()
-                .putString("vendor_name", settings.optString("vendor_name", "Ramesh Vegetable Shop"))
+                .putString("vendor_name", settings.optString("vendor_name", "Shiv Shakti Kirana Store"))
                 .putString("upi_id", settings.optString("upi_id", ""))
                 .putBoolean("motion_enabled", settings.optBoolean("motion_enabled", true))
                 .putBoolean("active_bill_count_visible", settings.optBoolean("active_bill_count_visible", true))
