@@ -41,29 +41,27 @@ jobs:
           gradle-version: '8.9'
           cache-cleanup: on-success
 
-      - name: Prepare update-compatible signing key
+      - name: Prepare signing key without committing private material
         shell: bash
         env:
           ANDROID_SIGNING_KEYSTORE_B64: ${{ secrets.ANDROID_SIGNING_KEYSTORE_B64 }}
         run: |
           set -euo pipefail
-          rm -f ci-debug.keystore /tmp/legacy-keystore.b64
+          rm -f ci-debug.keystore signing-mode.txt
 
           if [ -n "${ANDROID_SIGNING_KEYSTORE_B64:-}" ]; then
             echo "Using protected repository signing secret."
             printf '%s' "$ANDROID_SIGNING_KEYSTORE_B64" | base64 --decode > ci-debug.keystore
+            if ! keytool -list -keystore ci-debug.keystore -storepass android -alias androiddebugkey >/dev/null 2>&1; then
+              echo "Protected signing secret exists but is not a valid expected keystore." >&2
+              exit 1
+            fi
+            echo "protected-update-key" > signing-mode.txt
           else
-            echo "Protected signing secret not configured; trying the legacy update key used by the copied app."
-            curl -fsSL --retry 5 --retry-delay 2               "https://raw.githubusercontent.com/StackPilotMAX/Ramesh-Vegetable-Shop/ccb3b4a3fffe9c945480f892ce95b0d81e305755/ci/sabzibill-debug.keystore.b64"               -o /tmp/legacy-keystore.b64
-            base64 --decode /tmp/legacy-keystore.b64 > ci-debug.keystore
-          fi
-
-          if keytool -list -keystore ci-debug.keystore -storepass android -alias androiddebugkey >/dev/null 2>&1; then
-            echo "Signing key is usable and release updates retain the existing application signature."
-          else
-            echo "Legacy/protected key was unavailable or invalid; creating a CI-only fallback key so verification itself remains green."
-            rm -f ci-debug.keystore
-            keytool -genkeypair -v               -keystore ci-debug.keystore               -storepass android               -keypass android               -alias androiddebugkey               -keyalg RSA               -keysize 2048               -validity 36500               -dname "CN=Android Debug,O=Android,C=US"
+            echo "ANDROID_SIGNING_KEYSTORE_B64 is not configured; generating a CI-only key so tests and APK verification stay green."
+            echo "This fallback APK is not an update over an APK signed with a different certificate."
+            keytool -genkeypair -v               -keystore ci-debug.keystore               -storepass android               -keypass android               -alias androiddebugkey               -keyalg RSA               -keysize 2048               -validity 36500               -dname "CN=Shiv Shakti Kirana CI,O=Shiv Shakti Kirana Store,C=IN"
+            echo "ci-fallback-key" > signing-mode.txt
           fi
 
       - name: Verify app version
@@ -138,6 +136,8 @@ jobs:
           set -euo pipefail
           cp app/build/outputs/apk/release/app-release.apk ShivShaktiKirana-v3.0.0-production.apk
           sha256sum ShivShaktiKirana-v3.0.0-production.apk > ShivShaktiKirana-v3.0.0-production.apk.sha256
+          printf 'signing_mode=' > SIGNING-MODE.txt
+          cat signing-mode.txt >> SIGNING-MODE.txt
 
       - name: Upload production artifact
         uses: actions/upload-artifact@v4
@@ -146,6 +146,7 @@ jobs:
           path: |
             ShivShaktiKirana-v3.0.0-production.apk
             ShivShaktiKirana-v3.0.0-production.apk.sha256
+            SIGNING-MODE.txt
             app/build/reports/lint-results-release.html
             app/build/reports/tests/testDebugUnitTest/
           if-no-files-found: error
