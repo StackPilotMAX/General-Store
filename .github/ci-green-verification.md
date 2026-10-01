@@ -1,1 +1,1 @@
-This marker exists only to run the full pull-request production verification against the latest main-branch billing and festival-theme changes.
+CI marker: the main branch workflow must test the complete generic kirana billing app, including temporary item entry, Room ledger invariants, release lint, signed APK assembly, package/version verification, signature verification and checksum artifact generation.
