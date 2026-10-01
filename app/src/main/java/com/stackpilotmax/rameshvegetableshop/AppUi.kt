@@ -194,13 +194,13 @@ private fun WorldSplash(motionEnabled: Boolean) {
                     .background(Brush.linearGradient(listOf(SkyBlue, Lavender, LeafGreen))),
                 contentAlignment = Alignment.Center
             ) {
-                Text("🥬🪔", fontSize = 52.sp)
+                Text("🛍️🪔", fontSize = 52.sp)
             }
             Spacer(Modifier.height(26.dp))
-            Text("SabziBill", fontSize = 42.sp, fontWeight = FontWeight.Black, color = DeepBlue)
-            Text("Ramesh Vegetable Shop", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Lavender)
+            Text("Shiv Shakti Kirana", fontSize = 42.sp, fontWeight = FontWeight.Black, color = DeepBlue)
+            Text("Shiv Shakti Kirana Store", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Lavender)
             Spacer(Modifier.height(12.dp))
-            Text("✨ Shubh Deepawali • Dukaan se khata tak ✨", fontSize = 13.sp, color = MutedText)
+            Text("✨ Shiv Shakti Kirana • Saaf hisaab ✨", fontSize = 13.sp, color = MutedText)
         }
     }
 }
@@ -228,7 +228,7 @@ private fun ScrollWorldHome(viewModel: SabziViewModel) {
                 key = "billing-counter",
                 eyebrow = "Scene 01 • Shop counter",
                 title = "Naya Bill Banaiye",
-                body = "Customer chuniye, sabzi add kijiye aur live baki dekhte hue bill save kijiye.",
+                body = "Customer chuniye, koi bhi kirana item add kijiye aur live baki dekhte hue bill save kijiye.",
                 action = "Billing Counter Kholen",
                 icon = Icons.Default.AddShoppingCart,
                 accent = SkyBlue,
@@ -266,9 +266,9 @@ private fun ScrollWorldHome(viewModel: SabziViewModel) {
             WorldScene(
                 key = "voice-garden",
                 eyebrow = "Scene 04 • Voice garden",
-                title = "Sabzi Ka Naam Boliye",
-                body = "Hindi voice pack available ho to offline preference ke saath sabzi jaldi select kijiye.",
-                action = "Voice Billing Shuru Karein",
+                title = "Har Item Turant Add Karein",
+                body = "Har item ke liye name, unit, quantity aur price turant enter kijiye; koi catalogue maintain nahi hota.",
+                action = "Item Billing Shuru Karein",
                 icon = Icons.Default.Mic,
                 accent = WarmOrange,
                 gradient = listOf(Color(0xFFFF7A00), Color(0xFFC73562)),
@@ -418,7 +418,7 @@ private fun HomeWorldHero(
                         Text("🥬", fontSize = 35.sp)
                     }
                     Column(Modifier.padding(start = 12.dp)) {
-                        Text("SabziBill World", fontSize = 27.sp, fontWeight = FontWeight.Black, color = DeepBlue)
+                        Text("Shiv Shakti World", fontSize = 27.sp, fontWeight = FontWeight.Black, color = DeepBlue)
                         Text(vendorName, fontSize = 13.sp, fontWeight = FontWeight.Black, color = Lavender)
                     }
                 }
