@@ -1,4 +1,4 @@
-name: Shiv Shakti Kirana Store Android CI
+name: Shiv Satki Kirana Store Android CI
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: shiv-shakti-android-${{ github.ref }}
+  group: shiv-satki-android-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -16,27 +16,27 @@ permissions:
 
 jobs:
   verify-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
           packages: platform-tools
 
       - name: Set up Gradle 8.9
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '8.9'
           cache-cleanup: on-success
@@ -58,9 +58,17 @@ jobs:
             fi
             echo "protected-update-key" > signing-mode.txt
           else
-            echo "ANDROID_SIGNING_KEYSTORE_B64 is not configured; generating a CI-only key so tests and APK verification stay green."
-            echo "This fallback APK is not an update over an APK signed with a different certificate."
-            keytool -genkeypair -v               -keystore ci-debug.keystore               -storepass android               -keypass android               -alias androiddebugkey               -keyalg RSA               -keysize 2048               -validity 36500               -dname "CN=Shiv Shakti Kirana CI,O=Shiv Shakti Kirana Store,C=IN"
+            echo "ANDROID_SIGNING_KEYSTORE_B64 is not configured; generating a CI-only key."
+            echo "For client production delivery, configure the protected signing secret before shipping."
+            keytool -genkeypair -v \
+              -keystore ci-debug.keystore \
+              -storepass android \
+              -keypass android \
+              -alias androiddebugkey \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 36500 \
+              -dname "CN=Shiv Satki Kirana CI,O=Shiv Satki Kirana Store,C=IN"
             echo "ci-fallback-key" > signing-mode.txt
           fi
 
@@ -68,8 +76,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q 'versionCode = 14' app/build.gradle.kts
-          grep -q 'versionName = "3.0.0"' app/build.gradle.kts
+          grep -q 'versionCode = 15' app/build.gradle.kts
+          grep -q 'versionName = "3.1.0"' app/build.gradle.kts
 
       - name: Run unit tests (retry transient dependency failures)
         shell: bash
@@ -97,16 +105,16 @@ jobs:
             sleep 8
           done
 
-      - name: Build signed release APK (retry transient dependency failures)
+      - name: Build signed release APK and AAB (retry transient dependency failures)
         shell: bash
         run: |
           set -euo pipefail
           for attempt in 1 2 3; do
-            if gradle assembleRelease --stacktrace --no-daemon; then
+            if gradle assembleRelease bundleRelease --stacktrace --no-daemon; then
               exit 0
             fi
             [ "$attempt" -eq 3 ] && exit 1
-            echo "Build attempt $attempt failed; retrying."
+            echo "Release build attempt $attempt failed; retrying."
             sleep 8
           done
 
@@ -119,8 +127,8 @@ jobs:
           BADGING="$("$AAPT" dump badging app/build/outputs/apk/release/app-release.apk | head -1)"
           echo "$BADGING"
           echo "$BADGING" | grep -q "name='com.stackpilotmax.rameshvegetableshop'"
-          echo "$BADGING" | grep -q "versionCode='14'"
-          echo "$BADGING" | grep -q "versionName='3.0.0'"
+          echo "$BADGING" | grep -q "versionCode='15'"
+          echo "$BADGING" | grep -q "versionName='3.1.0'"
 
       - name: Verify APK signature
         shell: bash
@@ -130,23 +138,32 @@ jobs:
           test -n "$APKSIGNER"
           "$APKSIGNER" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
 
-      - name: Prepare production APK and checksum
+      - name: Prepare client delivery package
         shell: bash
         run: |
           set -euo pipefail
-          cp app/build/outputs/apk/release/app-release.apk ShivShaktiKirana-v3.0.0-production.apk
-          sha256sum ShivShaktiKirana-v3.0.0-production.apk > ShivShaktiKirana-v3.0.0-production.apk.sha256
-          printf 'signing_mode=' > SIGNING-MODE.txt
-          cat signing-mode.txt >> SIGNING-MODE.txt
+          mkdir -p client-delivery
+          cp app/build/outputs/apk/release/app-release.apk client-delivery/ShivSatkiKirana-v3.1.0.apk
+          cp app/build/outputs/bundle/release/app-release.aab client-delivery/ShivSatkiKirana-v3.1.0.aab
+          sha256sum client-delivery/ShivSatkiKirana-v3.1.0.apk > client-delivery/ShivSatkiKirana-v3.1.0.apk.sha256
+          sha256sum client-delivery/ShivSatkiKirana-v3.1.0.aab > client-delivery/ShivSatkiKirana-v3.1.0.aab.sha256
+          printf 'version=3.1.0\nversionCode=15\nsigning_mode=' > client-delivery/RELEASE-INFO.txt
+          cat signing-mode.txt >> client-delivery/RELEASE-INFO.txt
+          printf '\nAPK=ShivSatkiKirana-v3.1.0.apk\nAAB=ShivSatkiKirana-v3.1.0.aab\n' >> client-delivery/RELEASE-INFO.txt
+          cd client-delivery
+          zip -q -r ../ShivSatkiKirana-v3.1.0-client-delivery.zip .
 
-      - name: Upload production artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload client delivery artifact
+        uses: actions/upload-artifact@v6
         with:
-          name: ShivShaktiKirana-v3.0.0-production
+          name: ShivSatkiKirana-v3.1.0-client-delivery
           path: |
-            ShivShaktiKirana-v3.0.0-production.apk
-            ShivShaktiKirana-v3.0.0-production.apk.sha256
-            SIGNING-MODE.txt
+            ShivSatkiKirana-v3.1.0-client-delivery.zip
+            client-delivery/ShivSatkiKirana-v3.1.0.apk
+            client-delivery/ShivSatkiKirana-v3.1.0.aab
+            client-delivery/ShivSatkiKirana-v3.1.0.apk.sha256
+            client-delivery/ShivSatkiKirana-v3.1.0.aab.sha256
+            client-delivery/RELEASE-INFO.txt
             app/build/reports/lint-results-release.html
             app/build/reports/tests/testDebugUnitTest/
           if-no-files-found: error
