@@ -60,16 +60,16 @@ import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 
-internal val DeepBlue = DiwaliMaroon
-internal val SkyBlue = DiwaliSaffron
-internal val Lavender = DiwaliPurple
-internal val LeafGreen = DiwaliGreen
-internal val Mint = Color(0xFFFFF0CE)
-internal val SoftBackground = Color(0xFFFFF8EA)
-internal val MutedText = Color(0xFF765B68)
-internal val WarmOrange = Color(0xFFFF6A00)
-internal val ErrorRed = Color(0xFFD43A4C)
-internal val Ink = Color(0xFF2B1630)
+internal val DeepBlue = Color(0xFF0B5CAD)
+internal val SkyBlue = Color(0xFF1976D2)
+internal val Lavender = Color(0xFF1565C0)
+internal val LeafGreen = Color(0xFF0288D1)
+internal val Mint = Color(0xFFE3F2FD)
+internal val SoftBackground = Color(0xFFF4F9FF)
+internal val MutedText = Color(0xFF4F6680)
+internal val WarmOrange = Color(0xFF2196F3)
+internal val ErrorRed = Color(0xFFD32F2F)
+internal val Ink = Color(0xFF102A43)
 
 private val SabziColors = lightColorScheme(
     primary = SkyBlue,
