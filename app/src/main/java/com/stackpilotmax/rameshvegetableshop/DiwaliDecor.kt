@@ -33,13 +33,13 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-internal val DiwaliMaroon = Color(0xFF5A143F)
-internal val DiwaliPurple = Color(0xFF6A1B78)
-internal val DiwaliSaffron = Color(0xFFFF7A00)
-internal val DiwaliGold = Color(0xFFFFC83D)
-internal val DiwaliCream = Color(0xFFFFF6E5)
-internal val DiwaliRose = Color(0xFFD94C73)
-internal val DiwaliGreen = Color(0xFF278A54)
+internal val DiwaliMaroon = Color(0xFF0B5CAD)
+internal val DiwaliPurple = Color(0xFF1565C0)
+internal val DiwaliSaffron = Color(0xFF1976D2)
+internal val DiwaliGold = Color(0xFF64B5F6)
+internal val DiwaliCream = Color(0xFFEAF4FF)
+internal val DiwaliRose = Color(0xFF42A5F5)
+internal val DiwaliGreen = Color(0xFF00838F)
 
 @Composable
 internal fun DiwaliFestivalFrame(
