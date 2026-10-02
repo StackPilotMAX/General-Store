@@ -197,10 +197,10 @@ private fun WorldSplash(motionEnabled: Boolean) {
                 Text("🛍️🪔", fontSize = 52.sp)
             }
             Spacer(Modifier.height(26.dp))
-            Text("SHiva Sakti Kirana", fontSize = 42.sp, fontWeight = FontWeight.Black, color = DeepBlue)
-            Text("SHiva Sakti Kirana Store", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Lavender)
+            Text("Shiva Sakti Kirana", fontSize = 42.sp, fontWeight = FontWeight.Black, color = DeepBlue)
+            Text("Shiva Sakti Kirana Store", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Lavender)
             Spacer(Modifier.height(12.dp))
-            Text("✨ SHiva Sakti Kirana • Saaf hisaab ✨", fontSize = 13.sp, color = MutedText)
+            Text("✨ Shiva Sakti Kirana • Saaf hisaab ✨", fontSize = 13.sp, color = MutedText)
         }
     }
 }
@@ -418,7 +418,7 @@ private fun HomeWorldHero(
                         Text("🥬", fontSize = 35.sp)
                     }
                     Column(Modifier.padding(start = 12.dp)) {
-                        Text("SHiva Sakti Kirana", fontSize = 27.sp, fontWeight = FontWeight.Black, color = DeepBlue)
+                        Text("Shiva Sakti Kirana", fontSize = 27.sp, fontWeight = FontWeight.Black, color = DeepBlue)
                         Text(vendorName, fontSize = 13.sp, fontWeight = FontWeight.Black, color = Lavender)
                     }
                 }
