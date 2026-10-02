@@ -1,4 +1,4 @@
-name: Shiv Satki Kirana Store Android CI
+name: SHiva Sakti Kirana Store Android CI
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: shiv-satki-android-${{ github.ref }}
+  group: shiva-sakti-android-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -68,7 +68,7 @@ jobs:
               -keyalg RSA \
               -keysize 2048 \
               -validity 36500 \
-              -dname "CN=Shiv Satki Kirana CI,O=Shiv Satki Kirana Store,C=IN"
+              -dname "CN=SHiva Sakti Kirana CI,O=SHiva Sakti Kirana Store,C=IN"
             echo "ci-fallback-key" > signing-mode.txt
           fi
 
@@ -143,26 +143,26 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p client-delivery
-          cp app/build/outputs/apk/release/app-release.apk client-delivery/ShivSatkiKirana-v3.1.0.apk
-          cp app/build/outputs/bundle/release/app-release.aab client-delivery/ShivSatkiKirana-v3.1.0.aab
-          sha256sum client-delivery/ShivSatkiKirana-v3.1.0.apk > client-delivery/ShivSatkiKirana-v3.1.0.apk.sha256
-          sha256sum client-delivery/ShivSatkiKirana-v3.1.0.aab > client-delivery/ShivSatkiKirana-v3.1.0.aab.sha256
+          cp app/build/outputs/apk/release/app-release.apk client-delivery/SHivaSaktiKirana-v3.1.0.apk
+          cp app/build/outputs/bundle/release/app-release.aab client-delivery/SHivaSaktiKirana-v3.1.0.aab
+          sha256sum client-delivery/SHivaSaktiKirana-v3.1.0.apk > client-delivery/SHivaSaktiKirana-v3.1.0.apk.sha256
+          sha256sum client-delivery/SHivaSaktiKirana-v3.1.0.aab > client-delivery/SHivaSaktiKirana-v3.1.0.aab.sha256
           printf 'version=3.1.0\nversionCode=15\nsigning_mode=' > client-delivery/RELEASE-INFO.txt
           cat signing-mode.txt >> client-delivery/RELEASE-INFO.txt
-          printf '\nAPK=ShivSatkiKirana-v3.1.0.apk\nAAB=ShivSatkiKirana-v3.1.0.aab\n' >> client-delivery/RELEASE-INFO.txt
+          printf '\nAPK=SHivaSaktiKirana-v3.1.0.apk\nAAB=SHivaSaktiKirana-v3.1.0.aab\n' >> client-delivery/RELEASE-INFO.txt
           cd client-delivery
-          zip -q -r ../ShivSatkiKirana-v3.1.0-client-delivery.zip .
+          zip -q -r ../SHivaSaktiKirana-v3.1.0-client-delivery.zip .
 
       - name: Upload client delivery artifact
         uses: actions/upload-artifact@v6
         with:
-          name: ShivSatkiKirana-v3.1.0-client-delivery
+          name: SHivaSaktiKirana-v3.1.0-client-delivery
           path: |
-            ShivSatkiKirana-v3.1.0-client-delivery.zip
-            client-delivery/ShivSatkiKirana-v3.1.0.apk
-            client-delivery/ShivSatkiKirana-v3.1.0.aab
-            client-delivery/ShivSatkiKirana-v3.1.0.apk.sha256
-            client-delivery/ShivSatkiKirana-v3.1.0.aab.sha256
+            SHivaSaktiKirana-v3.1.0-client-delivery.zip
+            client-delivery/SHivaSaktiKirana-v3.1.0.apk
+            client-delivery/SHivaSaktiKirana-v3.1.0.aab
+            client-delivery/SHivaSaktiKirana-v3.1.0.apk.sha256
+            client-delivery/SHivaSaktiKirana-v3.1.0.aab.sha256
             client-delivery/RELEASE-INFO.txt
             app/build/reports/lint-results-release.html
             app/build/reports/tests/testDebugUnitTest/
